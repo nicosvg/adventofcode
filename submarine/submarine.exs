@@ -81,6 +81,10 @@ defmodule Submarine do
     if sum >= 0, do: 1, else: 0
   end
 
+  def get_min_bit(col) do
+    (get_maj_bit(col)*-1)+1
+  end
+
   def keep_word(word, majority_bits) do
     Enum.zip(word, majority_bits)
     |> IO.inspect()
@@ -91,6 +95,8 @@ defmodule Submarine do
     Enum.zip_with(list, & &1)
   end
 end
+
+Submarine.get_min_bit([1,0,0])|>inspect
 
 Submarine.apply_instructions("test.txt", &Submarine.read_oxygen/1)
 |> IO.inspect()
