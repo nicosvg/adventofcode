@@ -59,8 +59,7 @@ defmodule Submarine do
   def read_oxygen(list) do
     words = list |> Enum.map(&parse_diag_line/1)
     length = Enum.count(Enum.at(words, 1))
-    Enum.reduce(List.duplicate(0, count), [0, words], &reduce/2)
-
+    Enum.reduce(List.duplicate(0, length), [0, words], &reduce/2)
     |> Enum.at(1)
   end
 
