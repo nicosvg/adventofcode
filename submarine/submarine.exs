@@ -59,21 +59,52 @@ defmodule Submarine do
   def read_oxygen(list) do
     words = list |> Enum.map(&parse_diag_line/1)
     length = Enum.count(Enum.at(words, 1))
-    Enum.reduce(List.duplicate(0, length), [0, words], &reduce/2)
+
+    Enum.reduce_while(List.duplicate(0, length), [0, words], &filter_oxygen/2)
     |> Enum.at(1)
   end
 
-  def reduce(_e, [index, acc]) do
+  def read_dioxyde(list) do
+    words = list |> Enum.map(&parse_diag_line/1)
+    length = Enum.count(Enum.at(words, 1))
+
+    Enum.reduce_while(List.duplicate(0, length), [0, words], &filter_dioxyde/2)
+    |> Enum.at(1)
+  end
+
+  def filter_oxygen(_e, [index, acc]) do
     bit =
       acc
       |> transpose
       |> Enum.at(index)
       |> get_maj_bit
-      IO.inspect(bit, label: "bit")
+
+    IO.inspect(bit, label: "bit")
 
     filtered = Enum.filter(acc, fn x -> Enum.at(x, index) == bit end)
     IO.inspect(filtered, label: "filtered")
-    [index + 1, filtered]
+
+    if Enum.count(filtered) == 1 do
+      {:halt, [index + 1, filtered]}
+    else
+      {:cont, [index + 1, filtered]}
+    end
+  end
+
+  def filter_dioxyde(_e, [index, acc]) do
+    bit =
+      acc
+      |> transpose
+      |> Enum.at(index)
+      |> get_min_bit
+
+    filtered = Enum.filter(acc, fn x -> Enum.at(x, index) == bit end)
+
+    if Enum.count(filtered) == 1 do
+      {:halt, [index + 1, filtered]}
+    else
+      {:cont, [index + 1, filtered]}
+    end
   end
 
   def get_maj_bit(col) do
@@ -82,7 +113,7 @@ defmodule Submarine do
   end
 
   def get_min_bit(col) do
-    (get_maj_bit(col)*-1)+1
+    get_maj_bit(col) * -1 + 1
   end
 
   def keep_word(word, majority_bits) do
@@ -94,9 +125,76 @@ defmodule Submarine do
   def transpose(list) do
     Enum.zip_with(list, & &1)
   end
+
+  def parse_bingo(list) do
+    [numbers | gridsString] = list
+
+    draw =
+      numbers
+      |> String.split(",")
+      |> IO.inspect()
+      |> Enum.map(&String.to_integer/1)
+
+    IO.inspect(draw, label: "draw")
+
+    grids =
+      gridsString
+      |> Enum.map(&parse_grid_line/1)
+      |> Enum.chunk_every(5)
+      |> Enum.map(&Enum.concat/1)
+
+    IO.inspect(grids, label: "grids")
+    [draw, grids]
+  end
+
+  def parse_grid_line(line) do
+    line
+    |> String.split(" ", trim: true)
+    |> Enum.map(&String.to_integer/1)
+  end
+
+  def find_bingo_winner(list) do
+    [draw, grids] = parse_bingo(list)
+    Enum.reduce_while(draw, grids, &reduce/2)
+  end
+
+  def reduce(element, grids) do
+    result =
+      grids
+      |> Enum.map(&update_grid_and_check(&1, element))
+      |> IO.inspect()
+
+    updated =
+      result
+      |> Enum.map(fn {result, grid} -> grid end)
+
+    winner = Enum.find(result, fn {result, _} -> result == true end)
+
+    if winner != nil do
+      {true, winnerGrid} = winner
+      sum = winnerGrid |> Enum.filter(fn x -> x != nil end) |> Enum.sum
+      {:halt, {winnerGrid, sum, element, sum * element}}
+    else
+      {:cont, updated}
+    end
+  end
+
+  def update_grid_and_check(grid, number) do
+    updated = Enum.map(grid, fn x -> if x == number, do: nil, else: x end)
+
+    result_row =
+      updated
+      |> Enum.chunk_every(5)
+      |> Enum.any?(fn row -> Enum.all?(row, fn x -> x == nil end) end)
+    result_col =
+      updated
+      |> Enum.chunk_every(5)
+      |> transpose
+      |> Enum.any?(fn row -> Enum.all?(row, fn x -> x == nil end) end)
+
+    {result_row || result_col, updated}
+  end
 end
 
-Submarine.get_min_bit([1,0,0])|>inspect
-
-Submarine.apply_instructions("test.txt", &Submarine.read_oxygen/1)
-|> IO.inspect()
+Submarine.apply_instructions("bingo.txt", &Submarine.find_bingo_winner/1)
+|> IO.inspect(label: "final result")
