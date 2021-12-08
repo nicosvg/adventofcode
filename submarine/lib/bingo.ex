@@ -27,6 +27,30 @@ defmodule Bingo do
     Enum.reduce_while(draw, grids, &reduce/2)
   end
 
+  def find_last_bingo_winner(list) do
+    [draw, grids] = parse_bingo(list)
+    res = Enum.map(grids, fn g -> {:lost, g} end)
+
+    Enum.reduce_while(draw, res, &reduce_last_winner/2)
+  end
+
+  def reduce_last_winner(element, grids) do
+    results =
+      grids
+      |> Enum.map(&update_grid_and_check_result(&1, element))
+
+    winners = Enum.filter(results, fn {result, _} -> result != :lost end)
+
+    if Enum.count(grids) == Enum.count(winners) do
+      last = Enum.find(results, fn {result, _} -> result == :winning end)
+      {:winning, loserGrid} = last
+      sum = loserGrid |> Enum.filter(fn x -> x != nil end) |> Enum.sum()
+      {:halt, {loserGrid, sum, element, sum * element}}
+    else
+      {:cont, results}
+    end
+  end
+
   def reduce(element, grids) do
     result =
       grids
@@ -40,7 +64,7 @@ defmodule Bingo do
 
     if winner != nil do
       {true, winnerGrid} = winner
-      sum = winnerGrid |> Enum.filter(fn x -> x != nil end) |> Enum.sum
+      sum = winnerGrid |> Enum.filter(fn x -> x != nil end) |> Enum.sum()
       {:halt, {winnerGrid, sum, element, sum * element}}
     else
       {:cont, updated}
@@ -58,10 +82,20 @@ defmodule Bingo do
     result_col =
       updated
       |> Enum.chunk_every(5)
-      |> Utils.transpose
+      |> Utils.transpose()
       |> Enum.any?(fn row -> Enum.all?(row, fn x -> x == nil end) end)
 
-    {result_row || result_col, updated}
+      case result_col || result_row do
+        true -> {:winning, updated}
+        false -> {:lost, updated}
+      end
   end
 
+  def update_grid_and_check_result({status, grid}, number) do
+    case status do
+      :winning -> {:won, grid}
+      :won -> {:won, grid}
+      :lost -> update_grid_and_check(grid, number)
+    end
+  end
 end
