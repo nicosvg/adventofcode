@@ -24,11 +24,16 @@ defmodule Hydro do
             Map.update(grid, {x, y}, 1, &(&1 + 1))
           end)
 
+        [x1, y1, x2, y2], grid ->
+          Enum.reduce(Enum.zip(x1..x2, y1..y2), grid, fn point, grid ->
+            Map.update(grid, point, 1, &(&1 + 1))
+          end)
+
         _, grid ->
           grid
       end)
 
-      grid |> Enum.count(fn {_, v} -> v > 1 end)
+    grid |> Enum.count(fn {_, v} -> v > 1 end)
   end
 
   defp set_line({[start_x, start_y], [stop_x, stop_y]}, _acc) do

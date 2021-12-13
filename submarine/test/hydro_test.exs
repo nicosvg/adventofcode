@@ -5,6 +5,6 @@ defmodule HydroTest do
   @tag current: true
   test "get high points" do
   count = Hydro.get_high_count("resource/hydro_sample.txt")
-  assert count == 5
+  assert count == 12
   end
 end
