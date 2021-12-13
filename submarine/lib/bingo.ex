@@ -39,11 +39,10 @@ defmodule Bingo do
       grids
       |> Enum.map(&update_grid_and_check_result(&1, element))
 
-    winners = Enum.filter(results, fn {result, _} -> result != :lost end)
+    winnerNumber = Enum.count(results, fn {result, _} -> result != :lost end)
 
-    if Enum.count(grids) == Enum.count(winners) do
-      last = Enum.find(results, fn {result, _} -> result == :winning end)
-      {:winning, loserGrid} = last
+    if Enum.count(grids) == winnerNumber do
+      {:winning, loserGrid} = Enum.find(results, fn {result, _} -> result == :winning end)
       sum = loserGrid |> Enum.filter(fn x -> x != nil end) |> Enum.sum()
       {:halt, {loserGrid, sum, element, sum * element}}
     else
@@ -60,10 +59,10 @@ defmodule Bingo do
       result
       |> Enum.map(fn {result, grid} -> grid end)
 
-    winner = Enum.find(result, fn {result, _} -> result == true end)
+    winner = Enum.find(result, fn {result, _} -> result == :winning end)
 
     if winner != nil do
-      {true, winnerGrid} = winner
+      {:winning, winnerGrid} = winner
       sum = winnerGrid |> Enum.filter(fn x -> x != nil end) |> Enum.sum()
       {:halt, {winnerGrid, sum, element, sum * element}}
     else

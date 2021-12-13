@@ -14,7 +14,6 @@ defmodule BingoTest do
     assert product == 8580
   end
 
-  @tag current: true
   test "get bingo last winner" do
     {grid, sum, number, product} =
       Utils.apply_instructions("resource/bingo_sample.txt", &Bingo.find_last_bingo_winner/1)
